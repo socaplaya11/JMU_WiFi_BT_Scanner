@@ -49,15 +49,15 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        btnScanDevice = (Button) findViewById(R.id.scandevice);
-        btnEnableDiscoverability = (Button) findViewById(R.id.EnableDiscoverability);
+        btnScanDevice = (Button)findViewById(R.id.scandevice);
+        btnEnableDiscoverability = (Button)findViewById(R.id.EnableDiscoverability);
 
-        btnScanWifi = (Button) findViewById(R.id.scanwifi);
+        btnScanWifi = (Button)findViewById(R.id.scanwifi);
 
-        stateBluetooth = (TextView) findViewById(R.id.bluetoothstate);
+        stateBluetooth = (TextView)findViewById(R.id.bluetoothstate);
         bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
 
-        listDevicesFound = (ListView) findViewById(R.id.devicesfound);
+        listDevicesFound = (ListView)findViewById(R.id.devicesfound);
         btArrayAdapter = new ArrayAdapter<>(MainActivity.this, android.R.layout.simple_list_item_1);
         listDevicesFound.setAdapter(btArrayAdapter);
 
@@ -68,10 +68,10 @@ public class MainActivity extends Activity {
         btnScanWifi.setOnClickListener(btnScanWifiOnClickListener);
 
 
-        listWifi = (ListView) findViewById(R.id.ListWifi);
+        listWifi =(ListView)findViewById(R.id.ListWifi);
         wifiArrayAdapter = new ArrayAdapter<>(MainActivity.this, android.R.layout.simple_list_item_1);
         listWifi.setAdapter(wifiArrayAdapter);
-        wifi = (WifiManager) getSystemService(Context.WIFI_SERVICE);
+        wifi=(WifiManager)getSystemService(Context.WIFI_SERVICE);
         wifiReciever = new WifiScanReceiver();
 
         //register broadcast receiver
@@ -89,18 +89,19 @@ public class MainActivity extends Activity {
     }
 
     // Check if bluetooth is on and request to turn on if off
-    private void CheckBlueToothState() {
-        if (bluetoothAdapter == null) {
+    private void CheckBlueToothState(){
+        if (bluetoothAdapter == null){
             stateBluetooth.setText(R.string.no_bluetooth);
-        } else {
-            if (bluetoothAdapter.isEnabled()) {
-                if (bluetoothAdapter.isDiscovering()) {
+        }
+        else{
+            if (bluetoothAdapter.isEnabled()){
+                if(bluetoothAdapter.isDiscovering()){
                     stateBluetooth.setText(R.string.discover_devices);
-                } else {
+                }else{
                     stateBluetooth.setText(R.string.bluetooth_enabled);
                     btnScanDevice.setEnabled(true);
                 }
-            } else {
+            }else{
                 stateBluetooth.setText(R.string.bluetooth_disabled);
                 Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
                 startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
@@ -111,7 +112,7 @@ public class MainActivity extends Activity {
     }
 
     private Button.OnClickListener btnScanDeviceOnClickListener
-            = new Button.OnClickListener() {
+            = new Button.OnClickListener(){
 
         //When button is clicked check BT state, clear the array, and begin discovery of devices
         @Override
@@ -126,7 +127,7 @@ public class MainActivity extends Activity {
     };
 
     private Button.OnClickListener btnEnableDiscoverabilityOnClickListener
-            = new Button.OnClickListener() {
+            = new Button.OnClickListener(){
 
         @Override
 
@@ -139,7 +140,7 @@ public class MainActivity extends Activity {
     };
 
     private Button.OnClickListener btnScanWifiOnClickListener
-            = new Button.OnClickListener() {
+            = new Button.OnClickListener(){
 
         //When button is clicked check BT state, clear the array, and begin discovery of devices
         @Override
@@ -150,17 +151,18 @@ public class MainActivity extends Activity {
             wifi.startScan();
             Date d = new Date();
             List<ScanResult> wifiResults = wifi.getScanResults();
-            System.out.println(wifiResults.toString().length());
+            System.out.println(getBaseContext().getFilesDir());
             try {
                 OutputStream = openFileOutput("wifiscan.txt", Context.MODE_PRIVATE);
-                for (int i = 0; i < wifiResults.toString().length(); i++) {
+                for (int i = 0; i < wifis.length; i++){
                     OutputStream.write(wifiResults.toString().getBytes());
                 }
                 OutputStream.flush();
                 OutputStream.close();
 
 
-            } catch (Exception e) {
+            }
+            catch (Exception e) {
                 System.out.println("error error");
 
             }
@@ -168,11 +170,14 @@ public class MainActivity extends Activity {
             Log.d("MainActivity", "onClick");
 
 
+
+
+
         }
     };
 
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (requestCode == REQUEST_ENABLE_BT) {
+        if(requestCode == REQUEST_ENABLE_BT){
             CheckBlueToothState();
             Log.d("MainActivity", "onActivityResult");
         }
@@ -191,28 +196,32 @@ public class MainActivity extends Activity {
     }
 
 
-    private final BroadcastReceiver ActionFoundReceiver = new BroadcastReceiver() {
+
+
+    private final BroadcastReceiver ActionFoundReceiver = new BroadcastReceiver(){
 
         // If bluetooth device is found then add it to our array
         @Override
         public void onReceive(Context context, Intent intent) {
             String action = intent.getAction();
-            if (BluetoothDevice.ACTION_FOUND.equals(action)) {
+            if(BluetoothDevice.ACTION_FOUND.equals(action)) {
                 BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
                 btArrayAdapter.add(device.getName() + "\n" + device.getAddress());
                 btArrayAdapter.notifyDataSetChanged();
             }
-        }
-    };
+        }};
 
 
-    private class WifiScanReceiver extends BroadcastReceiver {
+
+    private class WifiScanReceiver extends BroadcastReceiver{
         public void onReceive(Context c, Intent intent) {
             List<ScanResult> wifiScanList = wifi.getScanResults();
 
             listWifi.setAdapter(new ArrayAdapter<>(MainActivity.this, android.R.layout.simple_list_item_1, wifiScanList));
         }
     }
+
+
 
 
 }
