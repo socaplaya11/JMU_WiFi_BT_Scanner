@@ -16,9 +16,9 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.io.FileOutputStream;
-import java.util.Date;
 import java.util.List;
 
 
@@ -34,7 +34,6 @@ public class MainActivity extends Activity {
     TextView stateBluetooth;
     BluetoothAdapter bluetoothAdapter;
     WifiManager wifi;
-    String[] wifis;
     WifiScanReceiver wifiReciever;
     FileOutputStream OutputStream;
 
@@ -49,15 +48,16 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        btnScanDevice = (Button)findViewById(R.id.scandevice);
-        btnEnableDiscoverability = (Button)findViewById(R.id.EnableDiscoverability);
+        btnScanDevice = (Button) findViewById(R.id.scandevice);
 
-        btnScanWifi = (Button)findViewById(R.id.scanwifi);
+        btnEnableDiscoverability = (Button) findViewById(R.id.EnableDiscoverability);
 
-        stateBluetooth = (TextView)findViewById(R.id.bluetoothstate);
+        btnScanWifi = (Button) findViewById(R.id.scanwifi);
+
+        stateBluetooth = (TextView) findViewById(R.id.bluetoothstate);
         bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
 
-        listDevicesFound = (ListView)findViewById(R.id.devicesfound);
+        listDevicesFound = (ListView) findViewById(R.id.devicesfound);
         btArrayAdapter = new ArrayAdapter<>(MainActivity.this, android.R.layout.simple_list_item_1);
         listDevicesFound.setAdapter(btArrayAdapter);
 
@@ -68,11 +68,12 @@ public class MainActivity extends Activity {
         btnScanWifi.setOnClickListener(btnScanWifiOnClickListener);
 
 
-        listWifi =(ListView)findViewById(R.id.ListWifi);
+        listWifi = (ListView) findViewById(R.id.ListWifi);
         wifiArrayAdapter = new ArrayAdapter<>(MainActivity.this, android.R.layout.simple_list_item_1);
         listWifi.setAdapter(wifiArrayAdapter);
-        wifi=(WifiManager)getSystemService(Context.WIFI_SERVICE);
+        wifi = (WifiManager) getSystemService(Context.WIFI_SERVICE);
         wifiReciever = new WifiScanReceiver();
+
 
         //register broadcast receiver
         registerReceiver(ActionFoundReceiver,
@@ -82,10 +83,13 @@ public class MainActivity extends Activity {
     }
 
 
+
+
     @Override
     protected void onDestroy() {
         super.onDestroy();
         unregisterReceiver(ActionFoundReceiver);
+
     }
 
     // Check if bluetooth is on and request to turn on if off
@@ -123,6 +127,8 @@ public class MainActivity extends Activity {
             bluetoothAdapter.startDiscovery();
             Log.d("MainActivity", "onClick");
 
+
+
         }
     };
 
@@ -147,16 +153,16 @@ public class MainActivity extends Activity {
 
         public void onClick(View v) {
 
-            registerReceiver(wifiReciever, new IntentFilter(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION));
+
             wifi.startScan();
-            Date d = new Date();
             List<ScanResult> wifiResults = wifi.getScanResults();
             System.out.println(getBaseContext().getFilesDir());
             try {
                 OutputStream = openFileOutput("wifiscan.txt", Context.MODE_PRIVATE);
-                for (int i = 0; i < wifis.length; i++){
+                for (int i = 0; i < wifiResults.size(); i++){
                     OutputStream.write(wifiResults.toString().getBytes());
                 }
+                System.out.println("success");
                 OutputStream.flush();
                 OutputStream.close();
 
@@ -166,15 +172,28 @@ public class MainActivity extends Activity {
                 System.out.println("error error");
 
             }
+            Intent emailIntent = new Intent(Intent.ACTION_SEND);
+            emailIntent.putExtra(Intent.EXTRA_EMAIL  , new String[]{"johnsct@dukes.jmu.edu"});
+            emailIntent.putExtra(Intent.EXTRA_SUBJECT, "subject");
+            emailIntent.putExtra(Intent.EXTRA_TEXT, wifiResults.toString());
+            emailIntent.setType("message/rfc822");
+
+            try {
+                startActivity(emailIntent);
+                finish();
+                Log.i("Finished sending email", "");
+            }
+            catch (android.content.ActivityNotFoundException ex) {
+                Toast.makeText(MainActivity.this, "There is no email client installed.", Toast.LENGTH_SHORT).show();
+            }
+
 
             Log.d("MainActivity", "onClick");
 
-
-
-
-
         }
     };
+
+
 
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if(requestCode == REQUEST_ENABLE_BT){
@@ -184,8 +203,8 @@ public class MainActivity extends Activity {
     }
 
     protected void onPause() {
-        unregisterReceiver(wifiReciever);
         super.onPause();
+
         Log.d("MainActivity", "onPause");
     }
 
@@ -204,11 +223,63 @@ public class MainActivity extends Activity {
         @Override
         public void onReceive(Context context, Intent intent) {
             String action = intent.getAction();
+            String DeviceList = null;
+
             if(BluetoothDevice.ACTION_FOUND.equals(action)) {
                 BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
                 btArrayAdapter.add(device.getName() + "\n" + device.getAddress());
                 btArrayAdapter.notifyDataSetChanged();
+                for (int j = 0; j < btArrayAdapter.getCount(); j++) {
+                    DeviceList +=  device;
+
+                }
+                System.out.println(DeviceList);
+
             }
+
+
+            /*
+            //This will get the SD Card directory and create a folder named MyFiles in it.
+            File sdCard = Environment.getExternalStorageDirectory();
+            File directory = new File (sdCard.getAbsolutePath() + "/MyFiles");
+            directory.mkdirs();
+
+//Now create the file in the above directory and write the contents into it
+            File file = new File(directory, "mysdfile.txt");
+            try {
+
+                FileOutputStream fOut = new FileOutputStream(file);
+                OutputStreamWriter osw = new OutputStreamWriter(fOut);
+                osw.write(DeviceList);
+                osw.flush();
+                osw.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            */
+
+
+
+
+            Intent emailIntent = new Intent(Intent.ACTION_SEND);
+            emailIntent.putExtra(Intent.EXTRA_EMAIL  , new String[]{"johnsct@dukes.jmu.edu"});
+            emailIntent.putExtra(Intent.EXTRA_SUBJECT, "subject");
+            emailIntent.putExtra(Intent.EXTRA_TEXT, DeviceList);
+            //emailIntent.putExtra(Intent.EXTRA_STREAM, "btScan.txt");
+            emailIntent.setType("message/rfc822");
+
+            try {
+                startActivity(emailIntent);
+                finish();
+                Log.i("Finished sending email", "");
+            }
+            catch (android.content.ActivityNotFoundException ex) {
+                Toast.makeText(MainActivity.this, "There is no email client installed.", Toast.LENGTH_SHORT).show();
+                }
+
+
+
+
         }};
 
 
@@ -220,6 +291,9 @@ public class MainActivity extends Activity {
             listWifi.setAdapter(new ArrayAdapter<>(MainActivity.this, android.R.layout.simple_list_item_1, wifiScanList));
         }
     }
+
+
+
 
 
 
