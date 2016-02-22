@@ -7,9 +7,11 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.net.Uri;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
+import android.os.Environment;
 import android.util.Log;
 import android.view.View;
 import android.widget.ArrayAdapter;
@@ -18,8 +20,12 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.util.List;
+
 
 
 public class MainActivity extends Activity {
@@ -35,7 +41,6 @@ public class MainActivity extends Activity {
     BluetoothAdapter bluetoothAdapter;
     WifiManager wifi;
     WifiScanReceiver wifiReciever;
-    FileOutputStream OutputStream;
 
 
     ArrayAdapter<String> btArrayAdapter;
@@ -61,7 +66,6 @@ public class MainActivity extends Activity {
         btArrayAdapter = new ArrayAdapter<>(MainActivity.this, android.R.layout.simple_list_item_1);
         listDevicesFound.setAdapter(btArrayAdapter);
 
-        CheckBlueToothState();
 
         btnScanDevice.setOnClickListener(btnScanDeviceOnClickListener);
         btnEnableDiscoverability.setOnClickListener(btnEnableDiscoverabilityOnClickListener);
@@ -157,26 +161,35 @@ public class MainActivity extends Activity {
             wifi.startScan();
             List<ScanResult> wifiResults = wifi.getScanResults();
             System.out.println(getBaseContext().getFilesDir());
+            String wififilename="wifi.txt";
+
             try {
-                OutputStream = openFileOutput("wifiscan.txt", Context.MODE_PRIVATE);
-                for (int i = 0; i < wifiResults.size(); i++){
-                    OutputStream.write(wifiResults.toString().getBytes());
-                }
-                System.out.println("success");
-                OutputStream.flush();
-                OutputStream.close();
+                File myFile = new File("/sdcard/"+wififilename);
+                FileOutputStream fOut = new FileOutputStream(myFile);
+                OutputStreamWriter myOutWriter = new OutputStreamWriter(fOut);
+                myOutWriter.append(wifiResults.toString());
+                myOutWriter.close();
+                fOut.close();
+
+                Toast.makeText(getApplicationContext(),wififilename + " saved",Toast.LENGTH_LONG).show();
 
 
-            }
-            catch (Exception e) {
-                System.out.println("error error");
+            } catch (IOException e) {e.printStackTrace();}
 
-            }
+
+
+            File filelocation = new File(Environment.getExternalStorageDirectory().getAbsolutePath(), wififilename);
+            Uri path = Uri.fromFile(filelocation);
             Intent emailIntent = new Intent(Intent.ACTION_SEND);
-            emailIntent.putExtra(Intent.EXTRA_EMAIL  , new String[]{"johnsct@dukes.jmu.edu"});
-            emailIntent.putExtra(Intent.EXTRA_SUBJECT, "subject");
-            emailIntent.putExtra(Intent.EXTRA_TEXT, wifiResults.toString());
-            emailIntent.setType("message/rfc822");
+// set the type to 'email'
+            emailIntent .setType("vnd.android.cursor.dir/email");
+            String to[] = {"johnsct@dukes.jmu.edu"};
+            emailIntent .putExtra(Intent.EXTRA_EMAIL, to);
+// the attachment
+            emailIntent .putExtra(Intent.EXTRA_STREAM, path);
+// the mail subject
+            emailIntent .putExtra(Intent.EXTRA_SUBJECT, "Subject");
+            startActivity(Intent.createChooser(emailIntent , "Send email..."));
 
             try {
                 startActivity(emailIntent);
@@ -226,6 +239,7 @@ public class MainActivity extends Activity {
             String DeviceList = null;
 
             if(BluetoothDevice.ACTION_FOUND.equals(action)) {
+
                 BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
                 btArrayAdapter.add(device.getName() + "\n" + device.getAddress());
                 btArrayAdapter.notifyDataSetChanged();
