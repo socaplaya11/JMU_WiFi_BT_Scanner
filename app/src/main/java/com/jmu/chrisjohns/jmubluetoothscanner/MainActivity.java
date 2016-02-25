@@ -24,6 +24,8 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.List;
 
 
@@ -93,6 +95,7 @@ public class MainActivity extends Activity {
     protected void onDestroy() {
         super.onDestroy();
         unregisterReceiver(ActionFoundReceiver);
+        unregisterReceiver(wifiReciever);
 
     }
 
@@ -157,17 +160,25 @@ public class MainActivity extends Activity {
 
         public void onClick(View v) {
 
-
             wifi.startScan();
             List<ScanResult> wifiResults = wifi.getScanResults();
             System.out.println(getBaseContext().getFilesDir());
-            String wififilename="wifi.txt";
+            String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(Calendar.getInstance().getTime());
+            System.out.println(timeStamp);
+            String wififilename="wifi.txt" + timeStamp;
 
             try {
                 File myFile = new File("/sdcard/"+wififilename);
                 FileOutputStream fOut = new FileOutputStream(myFile);
                 OutputStreamWriter myOutWriter = new OutputStreamWriter(fOut);
-                myOutWriter.append(wifiResults.toString());
+
+                for (int i = 0; i < wifiResults.size(); i++) {
+                    String wifiscantext = (wifiResults.get(i).toString() + "\n");
+                    myOutWriter.append(wifiscantext);
+                    System.out.println(wifiResults.get(i).toString());
+
+                }
+
                 myOutWriter.close();
                 fOut.close();
 
@@ -175,6 +186,7 @@ public class MainActivity extends Activity {
 
 
             } catch (IOException e) {e.printStackTrace();}
+
 
 
 
@@ -188,17 +200,10 @@ public class MainActivity extends Activity {
 // the attachment
             emailIntent .putExtra(Intent.EXTRA_STREAM, path);
 // the mail subject
-            emailIntent .putExtra(Intent.EXTRA_SUBJECT, "Subject");
+            emailIntent.putExtra(Intent.EXTRA_SUBJECT, "Subject");
             startActivity(Intent.createChooser(emailIntent , "Send email..."));
 
-            try {
-                startActivity(emailIntent);
-                finish();
-                Log.i("Finished sending email", "");
-            }
-            catch (android.content.ActivityNotFoundException ex) {
-                Toast.makeText(MainActivity.this, "There is no email client installed.", Toast.LENGTH_SHORT).show();
-            }
+
 
 
             Log.d("MainActivity", "onClick");
@@ -276,7 +281,7 @@ public class MainActivity extends Activity {
 
 
             Intent emailIntent = new Intent(Intent.ACTION_SEND);
-            emailIntent.putExtra(Intent.EXTRA_EMAIL  , new String[]{"johnsct@dukes.jmu.edu"});
+            emailIntent.putExtra(Intent.EXTRA_EMAIL, new String[]{"johnsct@dukes.jmu.edu"});
             emailIntent.putExtra(Intent.EXTRA_SUBJECT, "subject");
             emailIntent.putExtra(Intent.EXTRA_TEXT, DeviceList);
             //emailIntent.putExtra(Intent.EXTRA_STREAM, "btScan.txt");
@@ -289,7 +294,7 @@ public class MainActivity extends Activity {
             }
             catch (android.content.ActivityNotFoundException ex) {
                 Toast.makeText(MainActivity.this, "There is no email client installed.", Toast.LENGTH_SHORT).show();
-                }
+            }
 
 
 
